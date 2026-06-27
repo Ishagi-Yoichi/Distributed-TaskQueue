@@ -1,14 +1,25 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 
+from api.routes import router
+from core.queue import queue_consumer
+from core.state import task_queue
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Starting up- initializing queue and worker pool")
+    consumer_task = asyncio.create_task(queue_consumer(task_queue))
+    print("App started, Consumer is Live")
     yield
-    print("Shutting down- draining workers")
+    # cancel consumer cleanly on shutdown
+    consumer_task.cancel()
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        print("Consumer shutdown cleanly")
 
 
 app = FastAPI(
@@ -16,6 +27,7 @@ app = FastAPI(
     description="A lightweight Clerly-like system built with FastAPI",
     lifespan=lifespan,
 )
+app.include_router(router)
 
 
 @app.get("/health")

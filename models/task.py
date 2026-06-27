@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import IntEnum
 from typing import Any
 from uuid import UUID, uuid4
@@ -35,6 +35,6 @@ class Task(BaseModel):
     priority: Priority
     payload: dict[str, Any]
     status: str = "pending"
-    created_at: datetime = Field(default_factory=datetime.utc)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     result: Any = None
     error: str | None = None
